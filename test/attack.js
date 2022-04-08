@@ -7,7 +7,11 @@ describe("WalletSplitter", function() {
     before(async () => {
         [user1, recv5] = await ethers.getSigners();
 
-        const Receiver = await ethers.getContractFactory("Receiver");       
+        const Token = await ethers.getContractFactory("Token");
+        token = await Token.deploy();
+        await token.deployed();
+
+        const Receiver = await ethers.getContractFactory("Receiver");
         recv0 = await Receiver.deploy();
         await recv0.deployed();
         recv1 = await Receiver.deploy();
@@ -35,6 +39,8 @@ describe("WalletSplitter", function() {
             to: splitter.address,
             value: 1
         })
+
+        await token.transfer(splitter.address, ethers.utils.parseEther("100"))
     });
 
     it("Receivers should have 0 balance", async () => {
@@ -56,6 +62,15 @@ describe("WalletSplitter", function() {
         balance = await ethers.provider.getBalance(splitter.address)
         expect(balance).to.be.equal(0)
     });
+
+    it("withdrawToken() should work", async () => {
+        oldRecv0Balance = await token.balanceOf(recv0.address)
+        await splitter.withdrawToken(token.address)
+        newRecv0Balance = await token.balanceOf(recv0.address)
+
+        console.log("recv0 token balance: ", ethers.utils.formatEther(oldRecv0Balance))
+        console.log("recv0 token balance: ", ethers.utils.formatEther(newRecv0Balance))
+    })
 
     it("updateOwner should replace the owner address", async () => {
         const BadReceiver = await ethers.getContractFactory("BadReceiver");

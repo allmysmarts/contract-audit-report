@@ -17,6 +17,9 @@ contract Receiver {
 }
 
 contract BadReceiver {
+    receive() external payable {
+        revert("hey");
+    }
     function updateSplitOwner(address splitter, address to) external {
         IWalletSplitter _splitter = IWalletSplitter(splitter);
         _splitter.updateOwner(payable(to));

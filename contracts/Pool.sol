@@ -6,6 +6,7 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 contract WalletSplitter is ReentrancyGuard {
 
@@ -14,7 +15,7 @@ contract WalletSplitter is ReentrancyGuard {
     address payable private owner2; // gets 1/5 of fees
     address payable private owner3; // gets 1/5 of fees
 
-    constructor(address payable _owner0, address payable _owner1, address payable _owner2, address payable _owner3) {
+    constructor(address payable _owner0, address payable _owner1, address payable _owner2, address payable _owner3) {       
         owner0 = _owner0;
         owner1 = _owner1;
         owner2 = _owner2;
