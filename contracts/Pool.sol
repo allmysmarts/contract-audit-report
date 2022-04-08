@@ -3,19 +3,22 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract WalletSplitter is ReentrancyGuard {
+    address private owner0; // gets 2/5 of fees + dust
+    address private owner1; // gets 1/5 of fees
+    address private owner2; // gets 1/5 of fees
+    address private owner3; // gets 1/5 of fees
 
-    address payable private owner0; // gets 2/5 of fees + dust
-    address payable private owner1; // gets 1/5 of fees
-    address payable private owner2; // gets 1/5 of fees
-    address payable private owner3; // gets 1/5 of fees
+    constructor(address _owner0, address _owner1, address _owner2, address _owner3) {
+        require(_owner0 != address(0) && !Address.isContract(_owner0), "Not allowed contract");
+        require(_owner1 != address(0) && !Address.isContract(_owner1), "Not allowed contract");
+        require(_owner2 != address(0) && !Address.isContract(_owner2), "Not allowed contract");
+        require(_owner3 != address(0) && !Address.isContract(_owner3), "Not allowed contract");
 
-    constructor(address payable _owner0, address payable _owner1, address payable _owner2, address payable _owner3) {       
         owner0 = _owner0;
         owner1 = _owner1;
         owner2 = _owner2;
@@ -25,29 +28,29 @@ contract WalletSplitter is ReentrancyGuard {
     // to recieve native token 
     receive() external payable {}
 
-    function withdraw() public payable nonReentrant {
+    function withdraw() external payable nonReentrant {
         // get balance of native token
         uint256 balance = address(this).balance;
         // calculate fees
-        uint256 oneFifth = SafeMath.div(balance, 5);
-        uint256 twoFifth = SafeMath.mul(2, oneFifth);
-        uint256 dust     = SafeMath.mod(balance, 5);
+        uint256 oneFifth = balance / 5;
+        uint256 twoFifth = balance / 5 * 2;
+        uint256 dust     = balance % 5;
         // owner0 gets 2/5 of fees + dust
-        owner0.transfer(twoFifth + dust);
+        payable(owner0).transfer(twoFifth + dust);
         // owner1,2,3 gets 1/5 fees
-        owner1.transfer(oneFifth);
-        owner2.transfer(oneFifth);
-        owner3.transfer(oneFifth);
+        payable(owner1).transfer(oneFifth);
+        payable(owner2).transfer(oneFifth);
+        payable(owner3).transfer(oneFifth);
     }
 
-    function withdrawToken(address _contract) public nonReentrant{
+    function withdrawToken(address _contract) external nonReentrant{
         IERC20 erc20 = IERC20(_contract);
         // get balance of tokens
         uint256 balance = erc20.balanceOf(address(this));
         // calculate fees
-        uint256 oneFifth = SafeMath.div(balance, 5);
-        uint256 twoFifth = SafeMath.mul(2, oneFifth);
-        uint256 dust     = SafeMath.mod(balance, 5);
+        uint256 oneFifth = balance / 5;
+        uint256 twoFifth = balance * 2 / 5;
+        uint256 dust     = balance % 5;
         // owner0 gets 2/5 of fees + dust
         erc20.transfer(owner0, (twoFifth + dust));
         // owner1,2,3 gets 1/5 fees
@@ -56,7 +59,9 @@ contract WalletSplitter is ReentrancyGuard {
         erc20.transfer(owner3, oneFifth);
     }
 
-    function updateOwner(address payable _newOwner) public returns(bool) {
+    function updateOwner(address  _newOwner) public returns(bool) {
+        require(_newOwner != address(0), "Not allowed contract");
+
         if (msg.sender == owner0) {
             owner0 = _newOwner;
             return true;
